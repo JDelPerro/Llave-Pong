@@ -104,12 +104,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\dante\OneDrive\Documentos\Sistemas\SDL2-2.28.3\include;C:\Users\dante\OneDrive\Documentos\Sistemas\SDL2_ttf-2.20.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\SDL2_ttf-2.20.2\include;C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\SDL2-2.28.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\dante\OneDrive\Documentos\Sistemas\SDL2-2.28.3\lib\x64;C:\Users\dante\OneDrive\Documentos\Sistemas\SDL2_ttf-2.20.2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\SDL2_ttf-2.20.2\lib\x64;C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\SDL2-2.28.3\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

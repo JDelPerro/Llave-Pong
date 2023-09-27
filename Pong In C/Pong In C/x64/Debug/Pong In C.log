@@ -1,6 +1,6 @@
 ﻿  main.c
-C:\Users\dante\OneDrive\Documentos\Sistemas\Pong In C\Pong In C\main.c(54,5): warning C4013: 'srand' undefined; assuming extern returning int
-C:\Users\dante\OneDrive\Documentos\Sistemas\Pong In C\Pong In C\main.c(54,11): warning C4013: 'time' undefined; assuming extern returning int
-C:\Users\dante\OneDrive\Documentos\Sistemas\Pong In C\Pong In C\main.c(63,19): warning C4013: 'rand' undefined; assuming extern returning int
-C:\Users\dante\OneDrive\Documentos\Sistemas\Pong In C\Pong In C\main.c(186,49): warning C4018: '>': signed/unsigned mismatch
-  Pong In C.vcxproj -> C:\Users\dante\OneDrive\Documentos\Sistemas\Pong In C\x64\Debug\Pong In C.exe
+C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\Pong In C\main.c(54,5): warning C4013: 'srand' undefined; assuming extern returning int
+C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\Pong In C\main.c(54,11): warning C4013: 'time' undefined; assuming extern returning int
+C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\Pong In C\main.c(63,19): warning C4013: 'rand' undefined; assuming extern returning int
+C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\Pong In C\main.c(186,49): warning C4018: '>': signed/unsigned mismatch
+  Pong In C.vcxproj -> C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\x64\Debug\Pong In C.exe
