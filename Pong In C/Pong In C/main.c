@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <SDL.h>
 #include <SDL_ttf.h>
+#include <stdlib.h>
 
 // Dimensiones de la ventana
 const int WINDOW_WIDTH = 1280;
@@ -21,10 +22,94 @@ const int BALL_SPEED = 5;
 const int BALL_SPEED_INCREMENT = 1;
 
 // Tiempo de juego en segundos
-const int TIME = 80;
+const int TIME = 2;
 
-int main(int argc, char* argv[])
-{
+// Estructura para representar un evento del juego
+typedef struct {
+    int ballX;
+    int ballY;
+    int paddle1Y;
+    int paddle2Y;
+    int player1Score;
+    int player2Score;
+    int currentBallSpeed;
+    Uint32 timeElapsed;
+} GameEvent;
+
+// Nodo de la lista enlazada de eventos
+typedef struct Node {
+    GameEvent data;
+    struct Node* next;
+} Node;
+
+// Función para agregar un nuevo evento a la lista enlazada
+Node* addEventToList(Node* head, GameEvent eventData) {
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    if (newNode == NULL) {
+        fprintf(stderr, "Error al asignar memoria para un nuevo nodo.\n");
+        exit(1);
+    }
+
+    newNode->data = eventData;
+    newNode->next = head;
+
+    printf("Event Added\n");
+
+    return newNode;
+}
+
+// Función para liberar la memoria de la lista enlazada
+void freeEventList(Node* head) {
+    while (head != NULL) {
+        Node* temp = head;
+        head = head->next;
+        free(temp);
+    }
+}
+
+// Función para guardar la lista de eventos en un archivo
+void saveEventListToFile(Node* head, const char* filename) {
+    FILE* file = fopen(filename, "wb");
+    if (file == NULL) {
+        fprintf(stderr, "Error al abrir el archivo para escritura: %s\n", filename);
+        exit(1);
+    }
+
+    Node* current = head;
+    while (current != NULL) {
+        if (fwrite(&current->data, sizeof(GameEvent), 1, file) != 1) {
+            fprintf(stderr, "Error al escribir en el archivo: %s\n", filename);
+            exit(1);
+        }
+        current = current->next;
+    }
+
+    fclose(file);
+    printf("Eventos guardados en '%s'\n", filename);
+}
+
+// Nueva función para cargar eventos desde un archivo
+Node* loadEventListFromFile(const char* filename) {
+    FILE* file = fopen(filename, "rb");
+    if (file == NULL) {
+        fprintf(stderr, "Error al abrir el archivo para lectura: %s\n", filename);
+        exit(1);
+    }
+
+    Node* head = NULL;
+    GameEvent eventData;
+
+    while (fread(&eventData, sizeof(GameEvent), 1, file) == 1) {
+        head = addEventToList(head, eventData);
+    }
+
+    fclose(file);
+    printf("Eventos cargados de '%s'\n", filename);
+
+    return head;
+}
+
+int main(int argc, char* argv[]) {
     // Definir variables para el marcador de puntos de los jugadores
     int player1Score = 0;
     int player2Score = 0;
@@ -84,25 +169,35 @@ int main(int argc, char* argv[])
     // Variable para controlar el tiempo de incremento de velocidad
     Uint32 lastSpeedIncrementTime = 0;
 
+    // Lista enlazada para almacenar eventos del juego
+    Node* eventList = NULL;
+
     // Bucle principal del juego
     bool quit = false;
+    bool restartRequested = false;
+
     while (!quit) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 quit = true;
             }
-            // Manejar eventos de teclado para empezar el juego
+            // Manejar eventos de teclado
             if (event.type == SDL_KEYDOWN) {
-                // Iniciar el juego al presionar cualquier tecla cuando esté en la pantalla de inicio
                 if (startScreen) {
                     startScreen = false;
                     inGame = true;
                     startTime = SDL_GetTicks();
                 }
-                // Salir del programa al presionar cualquier tecla en la pantalla de Game Over
                 else if (gameOverScreen) {
-                    quit = true;
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        // Reiniciar el juego
+                        restartRequested = true;
+                    }
+                    else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+                        // Salir del juego
+                        quit = true;
+                    }
                 }
             }
         }
@@ -133,9 +228,35 @@ int main(int argc, char* argv[])
         // Colisiones con las paletas
         if ((ballX < PADDLE_WIDTH) && (ballY + BALL_HEIGHT > paddle1Y) && (ballY < paddle1Y + PADDLE_HEIGHT)) {
             ballDX = currentBallSpeed;
+
+            // Crear un nuevo evento de colisión de paleta 1 y agregarlo a la lista
+            GameEvent collisionEvent;
+            collisionEvent.ballX = ballX;
+            collisionEvent.ballY = ballY;
+            collisionEvent.paddle1Y = paddle1Y;
+            collisionEvent.paddle2Y = paddle2Y;
+            collisionEvent.player1Score = player1Score;
+            collisionEvent.player2Score = player2Score;
+            collisionEvent.currentBallSpeed = currentBallSpeed;
+            collisionEvent.timeElapsed = SDL_GetTicks() - startTime;
+
+            eventList = addEventToList(eventList, collisionEvent);
         }
         if ((ballX + BALL_WIDTH > WINDOW_WIDTH - PADDLE_WIDTH) && (ballY + BALL_HEIGHT > paddle2Y) && (ballY < paddle2Y + PADDLE_HEIGHT)) {
             ballDX = -currentBallSpeed;
+
+            // Crear un nuevo evento de colisión de paleta 2 y agregarlo a la lista
+            GameEvent collisionEvent;
+            collisionEvent.ballX = ballX;
+            collisionEvent.ballY = ballY;
+            collisionEvent.paddle1Y = paddle1Y;
+            collisionEvent.paddle2Y = paddle2Y;
+            collisionEvent.player1Score = player1Score;
+            collisionEvent.player2Score = player2Score;
+            collisionEvent.currentBallSpeed = currentBallSpeed;
+            collisionEvent.timeElapsed = SDL_GetTicks() - startTime;
+
+            eventList = addEventToList(eventList, collisionEvent);
         }
 
         // Colisiones con los bordes
@@ -147,6 +268,20 @@ int main(int argc, char* argv[])
         if (ballX < 0) {
             // Jugador 2 anota
             player2Score++;
+
+            // Crear un nuevo evento de anotación de jugador 2 y agregarlo a la lista
+            GameEvent scoreEvent;
+            scoreEvent.ballX = ballX;
+            scoreEvent.ballY = ballY;
+            scoreEvent.paddle1Y = paddle1Y;
+            scoreEvent.paddle2Y = paddle2Y;
+            scoreEvent.player1Score = player1Score;
+            scoreEvent.player2Score = player2Score;
+            scoreEvent.currentBallSpeed = currentBallSpeed;
+            scoreEvent.timeElapsed = SDL_GetTicks() - startTime;
+
+            eventList = addEventToList(eventList, scoreEvent);
+
             // Volver a colocar la pelota en el centro y cambiar la dirección aleatoriamente
             ballX = (WINDOW_WIDTH - BALL_WIDTH) / 2;
             ballY = (WINDOW_HEIGHT - BALL_HEIGHT) / 2;
@@ -160,6 +295,20 @@ int main(int argc, char* argv[])
         if (ballX + BALL_WIDTH > WINDOW_WIDTH) {
             // Jugador 1 anota
             player1Score++;
+
+            // Crear un nuevo evento de anotación de jugador 1 y agregarlo a la lista
+            GameEvent scoreEvent;
+            scoreEvent.ballX = ballX;
+            scoreEvent.ballY = ballY;
+            scoreEvent.paddle1Y = paddle1Y;
+            scoreEvent.paddle2Y = paddle2Y;
+            scoreEvent.player1Score = player1Score;
+            scoreEvent.player2Score = player2Score;
+            scoreEvent.currentBallSpeed = currentBallSpeed;
+            scoreEvent.timeElapsed = SDL_GetTicks() - startTime;
+
+            eventList = addEventToList(eventList, scoreEvent);
+
             // Volver a colocar la pelota en el centro y cambiar la dirección aleatoriamente
             ballX = (WINDOW_WIDTH - BALL_WIDTH) / 2;
             ballY = (WINDOW_HEIGHT - BALL_HEIGHT) / 2;
@@ -183,7 +332,7 @@ int main(int argc, char* argv[])
         Uint32 timeRemaining = (TIME * 1000) - elapsedTime;
 
         // Si el tiempo restante llega a cero, terminar el juego
-        if (timeRemaining <= 0 || timeRemaining > (TIME * 1000)) {
+        if ((timeRemaining <= 0 || timeRemaining > (TIME * 1000)) && !gameOverScreen) {
             inGame = false;
             gameOverScreen = true;
             if (player1Score > player2Score) {
@@ -195,11 +344,47 @@ int main(int argc, char* argv[])
             else {
                 winner = 0; // Empate
             }
+
+            // Guardar la lista de eventos en un archivo al finalizar el juego
+            saveEventListToFile(eventList, "game_events.dat");
         }
 
         // Renderizado
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+
+        if (restartRequested) {
+            printf("Restarted\n");
+
+            // Liberar la memoria de la lista de eventos actual
+            freeEventList(eventList);
+
+            // Cargar eventos desde el archivo
+            eventList = loadEventListFromFile("game_events.dat");
+
+            // Reiniciar las variables de juego con eventos cargados
+            Node* currentEvent = eventList;
+            while (currentEvent != NULL) {
+                GameEvent eventData = currentEvent->data;
+
+                // Actualizar las variables del juego con los datos cargados
+                ballX = eventData.ballX;
+                ballY = eventData.ballY;
+                paddle1Y = eventData.paddle1Y;
+                paddle2Y = eventData.paddle2Y;
+                player1Score = eventData.player1Score;
+                player2Score = eventData.player2Score;
+                currentBallSpeed = eventData.currentBallSpeed;
+                startTime = SDL_GetTicks() - eventData.timeElapsed;
+
+                currentEvent = currentEvent->next;
+            }
+
+            // Reiniciar las banderas de control
+            //inGame = true;
+            //gameOverScreen = false;
+            restartRequested = false;
+        }
 
         if (startScreen) {
             // Pantalla de inicio: "Presione cualquier tecla para jugar"
@@ -301,6 +486,9 @@ int main(int argc, char* argv[])
         // Controlar la velocidad del juego (aproximadamente 60 FPS)
         SDL_Delay(16);
     }
+
+    // Liberar la memoria de la lista de eventos
+    freeEventList(eventList);
 
     // Liberar recursos y cerrar el juego
     TTF_CloseFont(font);
