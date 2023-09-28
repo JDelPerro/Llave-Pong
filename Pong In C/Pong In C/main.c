@@ -22,9 +22,9 @@ const int BALL_SPEED = 5;
 const int BALL_SPEED_INCREMENT = 1;
 
 // Tiempo de juego en segundos
-const int TIME = 2;
+const int TIME = 80;
 
-// Estructura para representar un evento del juego
+// Estructura para representar un evento del jue
 typedef struct {
     int ballX;
     int ballY;
