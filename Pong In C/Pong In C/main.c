@@ -53,8 +53,6 @@ Node* addEventToList(Node* head, GameEvent eventData) {
     newNode->data = eventData;
     newNode->next = head;
 
-    printf("Event Added\n");
-
     return newNode;
 }
 
@@ -171,10 +169,12 @@ int main(int argc, char* argv[]) {
 
     // Lista enlazada para almacenar eventos del juego
     Node* eventList = NULL;
+    Node* currentEvent = NULL;
 
     // Bucle principal del juego
     bool quit = false;
     bool restartRequested = false;
+    bool replay = false;
 
     while (!quit) {
         SDL_Event event;
@@ -202,6 +202,12 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        Uint32 currentTime = SDL_GetTicks();
+
+        // Calcular el tiempo restante
+        Uint32 elapsedTime = currentTime - startTime;
+        Uint32 timeRemaining = (TIME * 1000) - elapsedTime;
+
         // Control de las paletas (solo cuando el juego está en marcha)
         if (inGame) {
             const Uint8* state = SDL_GetKeyboardState(NULL);
@@ -217,136 +223,114 @@ int main(int argc, char* argv[]) {
             if (state[SDL_SCANCODE_DOWN] && paddle2Y < WINDOW_HEIGHT - PADDLE_HEIGHT) {
                 paddle2Y += PADDLE_SPEED;
             }
-        }
 
-        // Movimiento de la pelota (solo cuando el juego está en marcha)
-        if (inGame) {
+            // Movimiento de la pelota (solo cuando el juego está en marcha)
             ballX += ballDX;
             ballY += ballDY;
-        }
 
-        // Colisiones con las paletas
-        if ((ballX < PADDLE_WIDTH) && (ballY + BALL_HEIGHT > paddle1Y) && (ballY < paddle1Y + PADDLE_HEIGHT)) {
-            ballDX = currentBallSpeed;
-
-            // Crear un nuevo evento de colisión de paleta 1 y agregarlo a la lista
-            GameEvent collisionEvent;
-            collisionEvent.ballX = ballX;
-            collisionEvent.ballY = ballY;
-            collisionEvent.paddle1Y = paddle1Y;
-            collisionEvent.paddle2Y = paddle2Y;
-            collisionEvent.player1Score = player1Score;
-            collisionEvent.player2Score = player2Score;
-            collisionEvent.currentBallSpeed = currentBallSpeed;
-            collisionEvent.timeElapsed = SDL_GetTicks() - startTime;
-
-            eventList = addEventToList(eventList, collisionEvent);
-        }
-        if ((ballX + BALL_WIDTH > WINDOW_WIDTH - PADDLE_WIDTH) && (ballY + BALL_HEIGHT > paddle2Y) && (ballY < paddle2Y + PADDLE_HEIGHT)) {
-            ballDX = -currentBallSpeed;
-
-            // Crear un nuevo evento de colisión de paleta 2 y agregarlo a la lista
-            GameEvent collisionEvent;
-            collisionEvent.ballX = ballX;
-            collisionEvent.ballY = ballY;
-            collisionEvent.paddle1Y = paddle1Y;
-            collisionEvent.paddle2Y = paddle2Y;
-            collisionEvent.player1Score = player1Score;
-            collisionEvent.player2Score = player2Score;
-            collisionEvent.currentBallSpeed = currentBallSpeed;
-            collisionEvent.timeElapsed = SDL_GetTicks() - startTime;
-
-            eventList = addEventToList(eventList, collisionEvent);
-        }
-
-        // Colisiones con los bordes
-        if (ballY < 0 || ballY + BALL_HEIGHT > WINDOW_HEIGHT) {
-            ballDY = -ballDY;
-        }
-
-        // Puntuación (continuación)
-        if (ballX < 0) {
-            // Jugador 2 anota
-            player2Score++;
-
-            // Crear un nuevo evento de anotación de jugador 2 y agregarlo a la lista
-            GameEvent scoreEvent;
-            scoreEvent.ballX = ballX;
-            scoreEvent.ballY = ballY;
-            scoreEvent.paddle1Y = paddle1Y;
-            scoreEvent.paddle2Y = paddle2Y;
-            scoreEvent.player1Score = player1Score;
-            scoreEvent.player2Score = player2Score;
-            scoreEvent.currentBallSpeed = currentBallSpeed;
-            scoreEvent.timeElapsed = SDL_GetTicks() - startTime;
-
-            eventList = addEventToList(eventList, scoreEvent);
-
-            // Volver a colocar la pelota en el centro y cambiar la dirección aleatoriamente
-            ballX = (WINDOW_WIDTH - BALL_WIDTH) / 2;
-            ballY = (WINDOW_HEIGHT - BALL_HEIGHT) / 2;
-            ballDX = (rand() % 2 == 0) ? BALL_SPEED : -BALL_SPEED;
-            ballDY = BALL_SPEED;
-            // Reiniciar la velocidad de la pelota
-            currentBallSpeed = BALL_SPEED;
-            // Actualizar el tiempo del último incremento de velocidad
-            lastSpeedIncrementTime = SDL_GetTicks();
-        }
-        if (ballX + BALL_WIDTH > WINDOW_WIDTH) {
-            // Jugador 1 anota
-            player1Score++;
-
-            // Crear un nuevo evento de anotación de jugador 1 y agregarlo a la lista
-            GameEvent scoreEvent;
-            scoreEvent.ballX = ballX;
-            scoreEvent.ballY = ballY;
-            scoreEvent.paddle1Y = paddle1Y;
-            scoreEvent.paddle2Y = paddle2Y;
-            scoreEvent.player1Score = player1Score;
-            scoreEvent.player2Score = player2Score;
-            scoreEvent.currentBallSpeed = currentBallSpeed;
-            scoreEvent.timeElapsed = SDL_GetTicks() - startTime;
-
-            eventList = addEventToList(eventList, scoreEvent);
-
-            // Volver a colocar la pelota en el centro y cambiar la dirección aleatoriamente
-            ballX = (WINDOW_WIDTH - BALL_WIDTH) / 2;
-            ballY = (WINDOW_HEIGHT - BALL_HEIGHT) / 2;
-            ballDX = (rand() % 2 == 0) ? BALL_SPEED : -BALL_SPEED;
-            ballDY = BALL_SPEED;
-            // Reiniciar la velocidad de la pelota
-            currentBallSpeed = BALL_SPEED;
-            // Actualizar el tiempo del último incremento de velocidad
-            lastSpeedIncrementTime = SDL_GetTicks();
-        }
-
-        // Incremento de velocidad de la pelota cada segundo
-        Uint32 currentTime = SDL_GetTicks();
-        if (currentTime - lastSpeedIncrementTime >= 1000) {
-            currentBallSpeed += BALL_SPEED_INCREMENT;
-            lastSpeedIncrementTime = currentTime;
-        }
-
-        // Calcular el tiempo restante
-        Uint32 elapsedTime = currentTime - startTime;
-        Uint32 timeRemaining = (TIME * 1000) - elapsedTime;
-
-        // Si el tiempo restante llega a cero, terminar el juego
-        if ((timeRemaining <= 0 || timeRemaining > (TIME * 1000)) && !gameOverScreen) {
-            inGame = false;
-            gameOverScreen = true;
-            if (player1Score > player2Score) {
-                winner = 1;
+            // Colisiones con las paletas
+            if ((ballX < PADDLE_WIDTH) && (ballY + BALL_HEIGHT > paddle1Y) && (ballY < paddle1Y + PADDLE_HEIGHT)) {
+                ballDX = currentBallSpeed;
             }
-            else if (player2Score > player1Score) {
-                winner = 2;
-            }
-            else {
-                winner = 0; // Empate
+            if ((ballX + BALL_WIDTH > WINDOW_WIDTH - PADDLE_WIDTH) && (ballY + BALL_HEIGHT > paddle2Y) && (ballY < paddle2Y + PADDLE_HEIGHT)) {
+                ballDX = -currentBallSpeed;
             }
 
-            // Guardar la lista de eventos en un archivo al finalizar el juego
-            saveEventListToFile(eventList, "game_events.dat");
+            // Colisiones con los bordes
+            if (ballY < 0 || ballY + BALL_HEIGHT > WINDOW_HEIGHT) {
+                ballDY = -ballDY;
+            }
+
+            // Puntuación (continuación)
+            if (ballX < 0) {
+                // Jugador 2 anota
+                player2Score++;
+
+                // Volver a colocar la pelota en el centro y cambiar la dirección aleatoriamente
+                ballX = (WINDOW_WIDTH - BALL_WIDTH) / 2;
+                ballY = (WINDOW_HEIGHT - BALL_HEIGHT) / 2;
+                ballDX = (rand() % 2 == 0) ? BALL_SPEED : -BALL_SPEED;
+                ballDY = BALL_SPEED;
+                // Reiniciar la velocidad de la pelota
+                currentBallSpeed = BALL_SPEED;
+                // Actualizar el tiempo del último incremento de velocidad
+                lastSpeedIncrementTime = SDL_GetTicks();
+            }
+            if (ballX + BALL_WIDTH > WINDOW_WIDTH) {
+                // Jugador 1 anota
+                player1Score++;
+
+                // Volver a colocar la pelota en el centro y cambiar la dirección aleatoriamente
+                ballX = (WINDOW_WIDTH - BALL_WIDTH) / 2;
+                ballY = (WINDOW_HEIGHT - BALL_HEIGHT) / 2;
+                ballDX = (rand() % 2 == 0) ? BALL_SPEED : -BALL_SPEED;
+                ballDY = BALL_SPEED;
+                // Reiniciar la velocidad de la pelota
+                currentBallSpeed = BALL_SPEED;
+                // Actualizar el tiempo del último incremento de velocidad
+                lastSpeedIncrementTime = SDL_GetTicks();
+            }
+
+            // Incremento de velocidad de la pelota cada segundo
+            if (currentTime - lastSpeedIncrementTime >= 1000) {
+                currentBallSpeed += BALL_SPEED_INCREMENT;
+                lastSpeedIncrementTime = currentTime;
+            }
+
+            // Si el tiempo restante llega a cero, terminar el juego
+            if ((timeRemaining <= 0 || timeRemaining > (TIME * 1000)) && !gameOverScreen) {
+                inGame = false;
+                gameOverScreen = true;
+                if (player1Score > player2Score) {
+                    winner = 1;
+                }
+                else if (player2Score > player1Score) {
+                    winner = 2;
+                }
+                else {
+                    winner = 0; // Empate
+                }
+
+                // Guardar la lista de eventos en un archivo al finalizar el juego
+                saveEventListToFile(eventList, "game_events.dat");
+            }
+
+            GameEvent tickEvent;
+            tickEvent.ballX = ballX;
+            tickEvent.ballY = ballY;
+            tickEvent.paddle1Y = paddle1Y;
+            tickEvent.paddle2Y = paddle2Y;
+            tickEvent.player1Score = player1Score;
+            tickEvent.player2Score = player2Score;
+            tickEvent.currentBallSpeed = currentBallSpeed;
+            tickEvent.timeElapsed = SDL_GetTicks() - startTime;
+
+            eventList = addEventToList(eventList, tickEvent);
+        }
+
+        if (replay)
+        {
+            if (currentEvent != NULL)
+            {
+                GameEvent eventData = currentEvent->data;
+
+                // Actualizar las variables del juego con los datos cargados
+                ballX = eventData.ballX;
+                ballY = eventData.ballY;
+                paddle1Y = eventData.paddle1Y;
+                paddle2Y = eventData.paddle2Y;
+                player1Score = eventData.player1Score;
+                player2Score = eventData.player2Score;
+                currentBallSpeed = eventData.currentBallSpeed;
+                startTime = SDL_GetTicks() - eventData.timeElapsed;
+
+                currentEvent = currentEvent->next;
+            }
+            else
+            {
+                replay = false;
+                gameOverScreen = true;
+            }
         }
 
         // Renderizado
@@ -362,28 +346,13 @@ int main(int argc, char* argv[]) {
             // Cargar eventos desde el archivo
             eventList = loadEventListFromFile("game_events.dat");
 
-            // Reiniciar las variables de juego con eventos cargados
-            Node* currentEvent = eventList;
-            while (currentEvent != NULL) {
-                GameEvent eventData = currentEvent->data;
-
-                // Actualizar las variables del juego con los datos cargados
-                ballX = eventData.ballX;
-                ballY = eventData.ballY;
-                paddle1Y = eventData.paddle1Y;
-                paddle2Y = eventData.paddle2Y;
-                player1Score = eventData.player1Score;
-                player2Score = eventData.player2Score;
-                currentBallSpeed = eventData.currentBallSpeed;
-                startTime = SDL_GetTicks() - eventData.timeElapsed;
-
-                currentEvent = currentEvent->next;
-            }
+            currentEvent = eventList;
 
             // Reiniciar las banderas de control
             //inGame = true;
-            //gameOverScreen = false;
+            gameOverScreen = false;
             restartRequested = false;
+            replay = true;
         }
 
         if (startScreen) {
@@ -421,7 +390,7 @@ int main(int argc, char* argv[]) {
             SDL_DestroyTexture(gameOverTexture);
             SDL_FreeSurface(gameOverSurface);
 
-            char pressAnyKeyText[] = "Presione cualquier tecla para salir";
+            char pressAnyKeyText[] = "ENTER = Replay | BackSpace = Quit";
             SDL_Surface* pressAnyKeySurface = TTF_RenderText_Solid(font, pressAnyKeyText, textColor);
             SDL_Texture* pressAnyKeyTexture = SDL_CreateTextureFromSurface(renderer, pressAnyKeySurface);
             SDL_Rect pressAnyKeyRect;
@@ -433,7 +402,7 @@ int main(int argc, char* argv[]) {
             SDL_DestroyTexture(pressAnyKeyTexture);
             SDL_FreeSurface(pressAnyKeySurface);
         }
-        else {
+        else{
             // Dibujar la línea de malla con menos opacidad que las paletas
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 100);
             for (int y = 0; y < WINDOW_HEIGHT; y += 20) {

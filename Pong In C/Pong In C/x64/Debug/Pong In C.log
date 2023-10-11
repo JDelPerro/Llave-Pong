@@ -1,4 +1,4 @@
 ﻿  main.c
-C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\Pong In C\main.c(139,11): warning C4013: 'time' undefined; assuming extern returning int
-C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\Pong In C\main.c(335,50): warning C4018: '>': signed/unsigned mismatch
+C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\Pong In C\main.c(137,11): warning C4013: 'time' undefined; assuming extern returning int
+C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\Pong In C\main.c(281,54): warning C4018: '>': signed/unsigned mismatch
   Pong In C.vcxproj -> C:\Users\dante\OneDrive\Documentos\Sistemas\Llave-Pong\Pong In C\x64\Debug\Pong In C.exe
